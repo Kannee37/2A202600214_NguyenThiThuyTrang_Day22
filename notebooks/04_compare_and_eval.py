@@ -85,10 +85,14 @@ def generate_with_adapter(adapter_path: Path, prompts: list[dict], max_new_token
 
     outputs = []
     for p in prompts:
-        messages = [{"role": "user", "content": p["prompt"]}]
-        inputs = tokenizer.apply_chat_template(
-            messages, return_tensors="pt", add_generation_prompt=True
-        ).to("cuda")
+        if tokenizer.chat_template:
+            messages = [{"role": "user", "content": p["prompt"]}]
+            inputs = tokenizer.apply_chat_template(
+                messages, return_tensors="pt", add_generation_prompt=True
+            ).to("cuda")
+        else:
+            prompt_text = f"User: {p['prompt']}\nAssistant:"
+            inputs = tokenizer(prompt_text, return_tensors="pt").input_ids.to("cuda")
         with torch.no_grad():
             out = model.generate(
                 input_ids=inputs,
